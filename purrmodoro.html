@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Purrmodoro — a cat-themed focus timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Shrikhand&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FFF8F0;
+    --cream-dark: #F5ECD8;
+    --peach: #FFD8B4;
+    --warm-orange: #F4A261;
+    --terracotta: #E07B39;
+    --brown: #6B3F1E;
+    --soft-pink: #FFB8C6;
+    --lavender: #C9B8F0;
+    --mint: #B8E8D0;
+    --text: #3D2C1E;
+    --text-muted: #9C7B62;
+    --tag-bg: #FDE8CF;
+    --card-shadow: 0 4px 20px rgba(107,63,30,0.10);
+    --radius: 20px;
+    --radius-sm: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(255,216,180,0.5) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(201,184,240,0.4) 0%, transparent 40%);
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    text-align: center;
+    padding: 2.5rem 1rem 1rem;
+  }
+  header h1 {
+    font-family: 'Shrikhand', serif;
+    font-size: 2.6rem;
+    color: var(--terracotta);
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  header p {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-top: 0.3rem;
+    font-weight: 600;
+  }
+
+  /* ---- NAV ---- */
+  nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.2rem 1rem;
+  }
+  nav button {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border: 2px solid var(--peach);
+    background: transparent;
+    color: var(--text-muted);
+    padding: 0.45rem 1.2rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  nav button.active {
+    background: var(--terracotta);
+    border-color: var(--terracotta);
+    color: #fff;
+  }
+  nav button:hover:not(.active) {
+    border-color: var(--terracotta);
+    color: var(--terracotta);
+  }
+
+  /* ---- PAGES ---- */
+  .page { display: none; padding: 0 1rem 3rem; max-width: 560px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ---- TIMER CARD ---- */
+  .timer-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .timer-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, var(--warm-orange), var(--soft-pink), var(--lavender));
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  /* Cat SVG */
+  .cat-wrap {
+    margin: 0 auto 1rem;
+    width: 100px;
+    height: 90px;
+    position: relative;
+  }
+  .cat-svg { width: 100%; height: 100%; }
+
+  /* Circle timer */
+  .ring-wrap {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 1.2rem;
+  }
+  .ring-wrap svg {
+    transform: rotate(-90deg);
+    width: 180px;
+    height: 180px;
+  }
+  .ring-bg { fill: none; stroke: var(--cream-dark); stroke-width: 10; }
+  .ring-progress {
+    fill: none;
+    stroke: var(--terracotta);
+    stroke-width: 10;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear, stroke 0.3s;
+  }
+  .ring-time {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+  .ring-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Mode pills */
+  .mode-pills {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
+  }
+  .mode-pill {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    border: 1.5px solid var(--peach);
+    background: transparent;
+    color: var(--text-muted);
+    padding: 0.3rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .mode-pill.active {
+    background: var(--warm-orange);
+    border-color: var(--warm-orange);
+    color: #fff;
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .btn-start {
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    background: var(--terracotta);
+    color: #fff;
+    border: none;
+    padding: 0.7rem 2.2rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+    box-shadow: 0 4px 12px rgba(224,123,57,0.35);
+  }
+  .btn-start:hover { background: var(--brown); transform: scale(1.04); }
+  .btn-reset {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: transparent;
+    border: 1.5px solid var(--peach);
+    color: var(--text-muted);
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-reset:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
+  /* Task section */
+  .task-section {
+    background: var(--cream);
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.1rem;
+    margin-top: 0.5rem;
+    text-align: left;
+  }
+  .task-section label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .task-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .task-input {
+    flex: 1;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+    background: #fff;
+    border: 1.5px solid var(--peach);
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.75rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .task-input:focus { border-color: var(--warm-orange); }
+  .tag-select {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+    background: #fff;
+    border: 1.5px solid var(--peach);
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.5rem;
+    outline: none;
+    cursor: pointer;
+  }
+  .tags-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .tag-chip {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  /* Session log */
+  .section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 1.5rem 0 0.75rem;
+  }
+  .log-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .log-item {
+    background: #fff;
+    border-radius: var(--radius-sm);
+    padding: 0.7rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(107,63,30,0.07);
+  }
+  .log-item-left { display: flex; align-items: center; gap: 0.6rem; }
+  .log-item-task { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+  .log-item-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 2px; }
+  .log-item-dur { font-size: 0.82rem; font-weight: 800; color: var(--terracotta); }
+  .empty-state { text-align: center; color: var(--text-muted); font-size: 0.9rem; font-weight: 600; padding: 1.5rem; }
+
+  /* ---- STATS PAGE ---- */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .stat-card {
+    background: #fff;
+    border-radius: var(--radius-sm);
+    padding: 1rem 1.1rem;
+    box-shadow: var(--card-shadow);
+  }
+  .stat-card .stat-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 0.3rem;
+  }
+  .stat-card .stat-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--terracotta);
+    line-height: 1;
+  }
+  .stat-card .stat-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 0.2rem;
+  }
+
+  /* Bar chart */
+  .chart-card {
+    background: #fff;
+    border-radius: var(--radius-sm);
+    padding: 1.2rem 1.1rem;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 0.75rem;
+  }
+  .chart-card h3 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 1rem;
+  }
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 100px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar {
+    width: 100%;
+    background: var(--peach);
+    border-radius: 6px 6px 0 0;
+    transition: height 0.4s ease;
+    position: relative;
+    min-height: 4px;
+  }
+  .bar.has-data { background: var(--warm-orange); }
+  .bar.today { background: var(--terracotta); }
+  .bar-day { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); }
+  .bar-mins { font-size: 0.65rem; font-weight: 700; color: var(--text-muted); }
+
+  /* Tag breakdown */
+  .tag-breakdown { display: flex; flex-direction: column; gap: 0.5rem; }
+  .tag-row-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .tag-row-label { font-size: 0.85rem; font-weight: 700; min-width: 80px; }
+  .tag-row-bar-bg {
+    flex: 1;
+    height: 10px;
+    background: var(--cream-dark);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .tag-row-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.5s ease;
+  }
+  .tag-row-mins { font-size: 0.78rem; font-weight: 700; color: var(--text-muted); min-width: 45px; text-align: right; }
+
+  /* Notification toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--brown);
+    color: #fff;
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.65rem 1.5rem;
+    border-radius: 999px;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Settings page */
+  .settings-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .settings-card h2 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 1rem;
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-row label { font-size: 0.9rem; font-weight: 700; }
+  .setting-row input[type=number] {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    width: 60px;
+    text-align: center;
+    border: 1.5px solid var(--peach);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem 0.4rem;
+    outline: none;
+    color: var(--text);
+  }
+  .setting-row input[type=number]:focus { border-color: var(--warm-orange); }
+  .danger-btn {
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    background: transparent;
+    border: 1.5px solid #f4a0a0;
+    color: #c0392b;
+    padding: 0.5rem 1.2rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 0.5rem;
+  }
+  .danger-btn:hover { background: #fff0f0; }
+
+  /* Responsive */
+  @media (max-width: 400px) {
+    header h1 { font-size: 2rem; }
+    .ring-time { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div style="font-size:2.5rem;line-height:1;margin-bottom:0.3rem;">₍^. .^₎⟆</div>
+  <h1>Purrmodoro</h1>
+  <p>stay focused ♡</p>
+</header>
+
+<nav>
+  <button class="active" onclick="showPage('timer')">⌚️ Timer</button>
+  <button onclick="showPage('stats')">📊 Stats</button>
+  <button onclick="showPage('settings')">⚙️ Settings</button>
+</nav>
+
+<!-- ===== TIMER PAGE ===== -->
+<div id="page-timer" class="page active">
+
+  <div class="timer-card">
+    <!-- Cat animation -->
+    <div class="cat-wrap">
+      <svg class="cat-svg" viewBox="0 0 100 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Body -->
+        <ellipse cx="50" cy="65" rx="28" ry="20" fill="#F4A261"/>
+        <!-- Head -->
+        <circle cx="50" cy="38" r="22" fill="#F4A261"/>
+        <!-- Ears -->
+        <polygon points="30,22 22,6 38,16" fill="#F4A261"/>
+        <polygon points="70,22 78,6 62,16" fill="#F4A261"/>
+        <polygon points="31,21 25,10 37,17" fill="#FFB8C6"/>
+        <polygon points="69,21 75,10 63,17" fill="#FFB8C6"/>
+        <!-- Face -->
+        <circle cx="42" cy="36" r="4" fill="#3D2C1E" id="eye-left"/>
+        <circle cx="58" cy="36" r="4" fill="#3D2C1E" id="eye-right"/>
+        <circle cx="43.5" cy="34.5" r="1.5" fill="white"/>
+        <circle cx="59.5" cy="34.5" r="1.5" fill="white"/>
+        <!-- Nose -->
+        <ellipse cx="50" cy="43" rx="3" ry="2" fill="#FFB8C6"/>
+        <!-- Mouth -->
+        <path d="M47 45.5 Q50 48 53 45.5" stroke="#3D2C1E" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        <!-- Whiskers -->
+        <line x1="28" y1="42" x2="43" y2="44" stroke="#6B3F1E" stroke-width="0.9" stroke-linecap="round" opacity="0.6"/>
+        <line x1="28" y1="45" x2="43" y2="45.5" stroke="#6B3F1E" stroke-width="0.9" stroke-linecap="round" opacity="0.6"/>
+        <line x1="57" y1="44" x2="72" y2="42" stroke="#6B3F1E" stroke-width="0.9" stroke-linecap="round" opacity="0.6"/>
+        <line x1="57" y1="45.5" x2="72" y2="45" stroke="#6B3F1E" stroke-width="0.9" stroke-linecap="round" opacity="0.6"/>
+        <!-- Tail -->
+        <path id="tail" d="M78 72 Q92 60 88 80 Q84 90 78 82" stroke="#E07B39" stroke-width="5" stroke-linecap="round" fill="none"/>
+        <!-- Paws -->
+        <ellipse cx="34" cy="82" rx="8" ry="5" fill="#E07B39"/>
+        <ellipse cx="66" cy="82" rx="8" ry="5" fill="#E07B39"/>
+      </svg>
+    </div>
+
+    <div id="cat-status" style="font-size:0.8rem;font-weight:700;color:var(--text-muted);margin-bottom:1rem;">🌿 ready to focus</div>
+
+    <div class="mode-pills">
+      <button class="mode-pill active" onclick="setMode('focus')">Focus</button>
+      <button class="mode-pill" onclick="setMode('short')">Short break</button>
+      <button class="mode-pill" onclick="setMode('long')">Long break</button>
+    </div>
+
+    <div class="ring-wrap">
+      <svg viewBox="0 0 180 180">
+        <circle class="ring-bg" cx="90" cy="90" r="80"/>
+        <circle class="ring-progress" id="ring" cx="90" cy="90" r="80" stroke-dasharray="502.6" stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-time">
+        <div id="timer-display">25:00</div>
+        <span class="ring-label" id="mode-label">FOCUS</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-reset" onclick="resetTimer()">↺ Reset</button>
+      <button class="btn-start" id="start-btn" onclick="toggleTimer()">▶ Start</button>
+    </div>
+
+    <div class="task-section">
+      <label>What are you working on?</label>
+      <div class="task-row">
+        <input class="task-input" id="task-input" type="text" placeholder="e.g. write cover letter..." maxlength="60"/>
+        <select class="tag-select" id="tag-select">
+          <option value="work">📋 work</option>
+          <option value="study">📝 study</option>
+          <option value="creative">🎨 creative</option>
+          <option value="admin">📨 admin</option>
+          <option value="health">🪴 health</option>
+          <option value="other">✨ other</option>
+        </select>
+      </div>
+      <div class="tags-display" id="active-tags"></div>
+    </div>
+  </div>
+
+  <p class="section-title">Today's sessions</p>
+  <div class="log-list" id="log-list">
+    <div class="empty-state" id="empty-log">No sessions yet - let's get started! 🐾</div>
+  </div>
+</div>
+
+<!-- ===== STATS PAGE ===== -->
+<div id="page-stats" class="page">
+
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">This week</div>
+      <div class="stat-value" id="stat-total">0</div>
+      <div class="stat-sub">sessions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Focus time</div>
+      <div class="stat-value" id="stat-mins">0</div>
+      <div class="stat-sub">minutes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best day</div>
+      <div class="stat-value" id="stat-best">—</div>
+      <div class="stat-sub" id="stat-best-day">no data</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Streak</div>
+      <div class="stat-value" id="stat-streak">0</div>
+      <div class="stat-sub">days 🌿</div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h3>Focus minutes — last 7 days</h3>
+    <div class="bar-chart" id="bar-chart"></div>
+  </div>
+
+  <div class="chart-card">
+    <h3>By tag</h3>
+    <div class="tag-breakdown" id="tag-breakdown">
+      <div class="empty-state">Complete some sessions to see your breakdown.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== SETTINGS PAGE ===== -->
+<div id="page-settings" class="page">
+  <div class="settings-card">
+    <h2>Timer durations</h2>
+    <div class="setting-row">
+      <label>Focus (minutes)</label>
+      <input type="number" id="set-focus" min="1" max="90" value="25" onchange="saveSetting('focus', this.value)">
+    </div>
+    <div class="setting-row">
+      <label>Short break</label>
+      <input type="number" id="set-short" min="1" max="30" value="5" onchange="saveSetting('short', this.value)">
+    </div>
+    <div class="setting-row">
+      <label>Long break</label>
+      <input type="number" id="set-long" min="1" max="60" value="15" onchange="saveSetting('long', this.value)">
+    </div>
+  </div>
+  <div class="settings-card">
+    <h2>Notifications</h2>
+    <div class="setting-row">
+      <label>Browser notifications</label>
+      <button class="btn-reset" onclick="requestNotifPerm()" id="notif-btn">Enable</button>
+    </div>
+    <div class="setting-row">
+      <label>Sound on complete</label>
+      <button class="btn-reset" onclick="toggleSound()" id="sound-btn">On 🔔</button>
+    </div>
+  </div>
+  <div class="settings-card">
+    <h2>Data</h2>
+    <button class="danger-btn" onclick="clearData()">🗑 Clear all session data</button>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ========================
+// STATE
+// ========================
+const TAG_COLORS = {
+  work:     { bg:'#FDE8CF', color:'#7A3D10', bar:'#F4A261' },
+  study:    { bg:'#E8E4F8', color:'#3C2A80', bar:'#9B8FE0' },
+  creative: { bg:'#FFE4F0', color:'#80244A', bar:'#E07BA0' },
+  admin:    { bg:'#E0F5EC', color:'#1A5E3A', bar:'#4DB87A' },
+  health:   { bg:'#FFF0D6', color:'#7A4A10', bar:'#F9B83A' },
+  other:    { bg:'#E8F5FF', color:'#1A4A7A', bar:'#5AABDD' }
+};
+const TAG_LABELS = { work:'📋 work', study:'📝 study', creative:'🎨 creative', admin:'📨 admin', health:'🪴 health', other:'✨other' };
+const CIRCUMFERENCE = 502.6;
+
+let settings = { focus: 25, short: 5, long: 15, sound: true };
+let currentMode = 'focus';
+let totalSecs = 25 * 60;
+let remainSecs = totalSecs;
+let running = false;
+let intervalId = null;
+let sessions = [];
+
+// ========================
+// STORAGE
+// ========================
+function loadData() {
+  try {
+    const s = localStorage.getItem('purrmodoro_sessions');
+    if (s) sessions = JSON.parse(s);
+    const cfg = localStorage.getItem('purrmodoro_settings');
+    if (cfg) settings = { ...settings, ...JSON.parse(cfg) };
+  } catch(e) {}
+  applySettings();
+  renderLog();
+}
+
+function saveData() {
+  localStorage.setItem('purrmodoro_sessions', JSON.stringify(sessions));
+}
+
+function saveSetting(key, val) {
+  settings[key] = parseInt(val) || settings[key];
+  localStorage.setItem('purrmodoro_settings', JSON.stringify(settings));
+  if (!running) { resetTimer(); }
+}
+
+function applySettings() {
+  document.getElementById('set-focus').value = settings.focus;
+  document.getElementById('set-short').value = settings.short;
+  document.getElementById('set-long').value = settings.long;
+  document.getElementById('sound-btn').textContent = settings.sound ? 'On 🔔' : 'Off 🔕';
+  if (!running) {
+    totalSecs = settings[currentMode === 'focus' ? 'focus' : currentMode === 'short' ? 'short' : 'long'] * 60;
+    remainSecs = totalSecs;
+    updateDisplay();
+    updateRing();
+  }
+}
+
+// ========================
+// TIMER CORE
+// ========================
+function setMode(mode) {
+  if (running) return;
+  currentMode = mode;
+  document.querySelectorAll('.mode-pill').forEach((b, i) => {
+    b.classList.toggle('active', ['focus','short','long'][i] === mode);
+  });
+  const labels = { focus:'FOCUS', short:'SHORT BREAK', long:'LONG BREAK' };
+  document.getElementById('mode-label').textContent = labels[mode];
+  const mins = { focus: settings.focus, short: settings.short, long: settings.long };
+  totalSecs = mins[mode] * 60;
+  remainSecs = totalSecs;
+  updateDisplay();
+  updateRing();
+  setCatStatus(mode === 'focus' ? '🌿 ready to focus' : '☕ break time');
+  setRingColor(mode);
+}
+
+function setRingColor(mode) {
+  const colors = { focus: '#E07B39', short: '#C9B8F0', long: '#B8E8D0' };
+  document.getElementById('ring').style.stroke = colors[mode];
+}
+
+function toggleTimer() {
+  if (running) pauseTimer();
+  else startTimer();
+}
+
+function startTimer() {
+  running = true;
+  document.getElementById('start-btn').textContent = '⏸ Pause';
+  setCatStatus(currentMode === 'focus' ? '🌿 focusing hard...' : '🌿 snoozing...');
+  animateCat(true);
+  intervalId = setInterval(tick, 1000);
+}
+
+function pauseTimer() {
+  running = false;
+  clearInterval(intervalId);
+  document.getElementById('start-btn').textContent = '▶ Resume';
+  setCatStatus('😺 paused');
+  animateCat(false);
+}
+
+function resetTimer() {
+  running = false;
+  clearInterval(intervalId);
+  document.getElementById('start-btn').textContent = '▶ Start';
+  const mins = { focus: settings.focus, short: settings.short, long: settings.long };
+  totalSecs = mins[currentMode] * 60;
+  remainSecs = totalSecs;
+  updateDisplay();
+  updateRing();
+  setCatStatus(currentMode === 'focus' ? '🌿 ready to focus' : '☕ break time');
+  animateCat(false);
+}
+
+function tick() {
+  if (remainSecs <= 0) {
+    onComplete();
+    return;
+  }
+  remainSecs--;
+  updateDisplay();
+  updateRing();
+}
+
+function onComplete() {
+  clearInterval(intervalId);
+  running = false;
+  animateCat(false);
+  document.getElementById('start-btn').textContent = '▶ Start';
+
+  if (currentMode === 'focus') {
+    const task = document.getElementById('task-input').value.trim() || 'Focus session';
+    const tag = document.getElementById('tag-select').value;
+    const now = new Date();
+    sessions.push({
+      id: Date.now(),
+      task,
+      tag,
+      mins: settings.focus,
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().slice(0,5)
+    });
+    saveData();
+    renderLog();
+    showToast(`Great work! +${settings.focus} min logged 🐾`);
+    setCatStatus('🐾 session complete!');
+  } else {
+    showToast('Break over - back to work! 🐱');
+    setCatStatus('😺 break done!');
+  }
+
+  if (settings.sound) playChime();
+  if (Notification.permission === 'granted') {
+    new Notification('Purrmodoro', {
+      body: currentMode === 'focus' ? '🐾 Focus session done!' : '🐾 Break over!',
+      icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🐱</text></svg>'
+    });
+  }
+  remainSecs = totalSecs;
+  updateDisplay();
+  updateRing();
+}
+
+function updateDisplay() {
+  const m = String(Math.floor(remainSecs / 60)).padStart(2, '0');
+  const s = String(remainSecs % 60).padStart(2, '0');
+  document.getElementById('timer-display').textContent = `${m}:${s}`;
+  document.title = running ? `${m}:${s} — Purrmodoro` : 'Purrmodoro';
+}
+
+function updateRing() {
+  const pct = remainSecs / totalSecs;
+  const offset = CIRCUMFERENCE * (1 - pct);
+  document.getElementById('ring').style.strokeDashoffset = offset;
+}
+
+// ========================
+// CAT ANIMATION
+// ========================
+let tailInterval = null;
+function animateCat(active) {
+  clearInterval(tailInterval);
+  const tail = document.getElementById('tail');
+  const eyeL = document.getElementById('eye-left');
+  const eyeR = document.getElementById('eye-right');
+  if (active) {
+    let t = 0;
+    tailInterval = setInterval(() => {
+      t += 0.15;
+      const swing = Math.sin(t) * 8;
+      tail.setAttribute('d', `M78 72 Q${92 + swing} 60 ${88 + swing*0.5} 80 Q84 90 78 82`);
+    }, 50);
+    eyeL.setAttribute('ry', '4');
+    eyeR.setAttribute('ry', '4');
+  } else {
+    tail.setAttribute('d', 'M78 72 Q92 60 88 80 Q84 90 78 82');
+  }
+}
+
+function setCatStatus(msg) {
+  document.getElementById('cat-status').textContent = msg;
+}
+
+// ========================
+// LOG RENDERING
+// ========================
+function renderLog() {
+  const today = new Date().toISOString().split('T')[0];
+  const todaySessions = sessions.filter(s => s.date === today).reverse();
+  const list = document.getElementById('log-list');
+  const empty = document.getElementById('empty-log');
+  if (todaySessions.length === 0) {
+    empty.style.display = 'block';
+    list.innerHTML = '';
+    list.appendChild(empty);
+    return;
+  }
+  list.innerHTML = '';
+  todaySessions.forEach(s => {
+    const tc = TAG_COLORS[s.tag] || TAG_COLORS.other;
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    item.innerHTML = `
+      <div class="log-item-left">
+        <span class="tag-chip" style="background:${tc.bg};color:${tc.color}">${TAG_LABELS[s.tag]}</span>
+        <div>
+          <div class="log-item-task">${s.task}</div>
+          <div class="log-item-meta">${s.time}</div>
+        </div>
+      </div>
+      <div class="log-item-dur">${s.mins}m</div>
+    `;
+    list.appendChild(item);
+  });
+}
+
+// ========================
+// STATS
+// ========================
+function renderStats() {
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  // Last 7 days
+  const days = [];
+  const dayLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+
+  const weekly = sessions.filter(s => days.includes(s.date));
+  const totalSessions = weekly.length;
+  const totalMins = weekly.reduce((a, s) => a + s.mins, 0);
+
+  // Best day
+  const byDay = {};
+  weekly.forEach(s => { byDay[s.date] = (byDay[s.date] || 0) + s.mins; });
+  let bestDay = null, bestMins = 0;
+  for (const [d, m] of Object.entries(byDay)) {
+    if (m > bestMins) { bestMins = m; bestDay = d; }
+  }
+
+  // Streak
+  let streak = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().split('T')[0];
+    if (sessions.some(s => s.date === ds)) streak++;
+    else break;
+  }
+
+  document.getElementById('stat-total').textContent = totalSessions;
+  document.getElementById('stat-mins').textContent = totalMins;
+  document.getElementById('stat-streak').textContent = streak;
+  if (bestDay) {
+    document.getElementById('stat-best').textContent = bestMins;
+    const bd = new Date(bestDay + 'T12:00:00');
+    document.getElementById('stat-best-day').textContent = bd.toLocaleDateString('en-GB', { weekday:'short', month:'short', day:'numeric' });
+  }
+
+  // Bar chart
+  const chart = document.getElementById('bar-chart');
+  chart.innerHTML = '';
+  const maxMins = Math.max(...days.map(d => byDay[d] || 0), 1);
+  days.forEach(d => {
+    const mins = byDay[d] || 0;
+    const heightPct = (mins / maxMins) * 90;
+    const col = document.createElement('div');
+    col.className = 'bar-col';
+    const isToday = d === todayStr;
+    const hasData = mins > 0;
+    col.innerHTML = `
+      <div class="bar ${hasData ? 'has-data':''} ${isToday ? 'today':''}" style="height:${Math.max(heightPct,4)}px" title="${mins} min"></div>
+      <div class="bar-day">${dayLabels[new Date(d+'T12:00:00').getDay()]}</div>
+      ${mins > 0 ? `<div class="bar-mins">${mins}m</div>` : ''}
+    `;
+    chart.appendChild(col);
+  });
+
+  // Tag breakdown
+  const tagMins = {};
+  weekly.forEach(s => { tagMins[s.tag] = (tagMins[s.tag] || 0) + s.mins; });
+  const breakdown = document.getElementById('tag-breakdown');
+  if (Object.keys(tagMins).length === 0) {
+    breakdown.innerHTML = '<div class="empty-state">Complete some sessions to see your breakdown.</div>';
+    return;
+  }
+  const maxTag = Math.max(...Object.values(tagMins));
+  breakdown.innerHTML = '';
+  Object.entries(tagMins).sort((a,b) => b[1]-a[1]).forEach(([tag, mins]) => {
+    const tc = TAG_COLORS[tag] || TAG_COLORS.other;
+    const pct = (mins / maxTag) * 100;
+    const row = document.createElement('div');
+    row.className = 'tag-row-stat';
+    row.innerHTML = `
+      <span class="tag-row-label" style="color:${tc.color}">${TAG_LABELS[tag]}</span>
+      <div class="tag-row-bar-bg"><div class="tag-row-bar-fill" style="width:${pct}%;background:${tc.bar}"></div></div>
+      <span class="tag-row-mins">${mins}m</span>
+    `;
+    breakdown.appendChild(row);
+  });
+}
+
+// ========================
+// PAGE NAVIGATION
+// ========================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach((b, i) => {
+    b.classList.toggle('active', ['timer','stats','settings'][i] === name);
+  });
+  document.getElementById(`page-${name}`).classList.add('active');
+  if (name === 'stats') renderStats();
+}
+
+// ========================
+// NOTIFICATIONS & SOUND
+// ========================
+function requestNotifPerm() {
+  Notification.requestPermission().then(p => {
+    showToast(p === 'granted' ? 'Notifications enabled! 🔔' : 'Permission denied');
+    document.getElementById('notif-btn').textContent = p === 'granted' ? 'Enabled ✓' : 'Enable';
+  });
+}
+
+function toggleSound() {
+  settings.sound = !settings.sound;
+  document.getElementById('sound-btn').textContent = settings.sound ? 'On 🔔' : 'Off 🔕';
+  localStorage.setItem('purrmodoro_settings', JSON.stringify(settings));
+}
+
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.4);
+      osc.start(ctx.currentTime + i * 0.15);
+      osc.stop(ctx.currentTime + i * 0.15 + 0.4);
+    });
+  } catch(e) {}
+}
+
+// ========================
+// TOAST
+// ========================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ========================
+// CLEAR DATA
+// ========================
+function clearData() {
+  if (!confirm('Delete all session data? This cannot be undone.')) return;
+  sessions = [];
+  saveData();
+  renderLog();
+  showToast('Data cleared 🗑');
+}
+
+// ========================
+// INIT
+// ========================
+loadData();
+updateDisplay();
+updateRing();
+setRingColor('focus');
+</script>
+</body>
+</html>
