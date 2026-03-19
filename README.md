@@ -1,7 +1,7 @@
 # Purrmodoro-Timer
 I like cats, I like productivity, so here is a cosy cat-themed timer. Focus sessions, task tags &amp; weekly stats, all in one lil' html file.
 
-<img width="704" height="925" alt="image" src="https://github.com/user-attachments/assets/98300169-880f-441b-a3a0-2a3d0d83864d" />
+<img width="704" height="925" alt="Screenshot 2026-03-19 064302" src="https://github.com/user-attachments/assets/4988d373-3394-4088-8976-9558092b13f7" />
 
 ### Vanilla HTML,CSS,JavaScript
 
